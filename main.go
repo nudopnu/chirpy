@@ -45,9 +45,9 @@ func main() {
 	filepathRoot := http.Dir(".")
 	handlerStatic := http.StripPrefix("/app", http.FileServer(filepathRoot))
 	serveMux.Handle("/app/", state.middlewareMetricsInc(handlerStatic))
-	serveMux.HandleFunc("/healthz", handlerHealthz)
-	serveMux.HandleFunc("/metrics", state.handlerMetrics)
-	serveMux.HandleFunc("/reset", state.handlerReset)
+	serveMux.HandleFunc("GET /healthz", handlerHealthz)
+	serveMux.HandleFunc("GET /metrics", state.handlerMetrics)
+	serveMux.HandleFunc("POST /reset", state.handlerReset)
 	log.Printf("Serving file from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(server.ListenAndServe())
 }
