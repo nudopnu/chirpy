@@ -2,21 +2,18 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"unicode/utf8"
+
+	"github.com/nudopnu/chirpy/internal"
 )
 
 type chirp struct {
 	Body string `json:"body"`
 }
 
-type errorMessage struct {
-	Error string `json:"error"`
-}
-
 type successMessage struct {
-	Valid bool `json:"valid"`
+	CleanedBody string `json:"cleaned_body"`
 }
 
 func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
@@ -24,30 +21,11 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	decoder.Decode(&chirp)
 	if utf8.RuneCountInString(chirp.Body) > 140 {
-		respBody := errorMessage{
-			Error: "Chirp is too long",
-		}
-		dat, err := json.Marshal(respBody)
-		if err != nil {
-			log.Printf("error marshalling json: %s", err)
-			w.WriteHeader(500)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		w.Write(dat)
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 	respBody := successMessage{
-		Valid: true,
+		CleanedBody: internal.CleanText(chirp.Body),
 	}
-	dat, err := json.Marshal(respBody)
-	if err != nil {
-		log.Printf("error marshalling json: %s", err)
-		w.WriteHeader(500)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	w.Write(dat)
+	respondWithJSON(w, http.StatusOK, respBody)
 }
