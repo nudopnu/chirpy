@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"sync/atomic"
@@ -9,27 +8,6 @@ import (
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
-}
-
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg.fileserverHits.Add(1)
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())))
-}
-
-func (cfg *apiConfig) handlerReset(http.ResponseWriter, *http.Request) {
-	cfg.fileserverHits.Swap(0)
-}
-
-func handlerHealthz(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
 }
 
 func main() {
@@ -46,8 +24,9 @@ func main() {
 	handlerStatic := http.StripPrefix("/app", http.FileServer(filepathRoot))
 	serveMux.Handle("/app/", state.middlewareMetricsInc(handlerStatic))
 	serveMux.HandleFunc("GET /api/healthz", handlerHealthz)
-	serveMux.HandleFunc("GET /api/metrics", state.handlerMetrics)
-	serveMux.HandleFunc("POST /api/reset", state.handlerReset)
+	serveMux.HandleFunc("GET /admin/metrics", state.handlerMetrics)
+	serveMux.HandleFunc("POST /admin/reset", state.handlerReset)
+	serveMux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
 	log.Printf("Serving file from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(server.ListenAndServe())
 }
