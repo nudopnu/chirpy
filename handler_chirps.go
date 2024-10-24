@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nudopnu/chirpy/internal"
+	"github.com/nudopnu/chirpy/internal/auth"
 	"github.com/nudopnu/chirpy/internal/database"
 )
 
@@ -21,12 +22,21 @@ type Chirp struct {
 }
 
 func (cfg *apiConfig) HandlerPostChirps(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "invalid token")
+		return
+	}
+	userId, err := auth.ValidateJWT(token, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "invalid token")
+		return
+	}
 	postChirpsBody := struct {
-		Body   string    `json:"body"`
-		UserId uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}{}
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&postChirpsBody)
+	err = decoder.Decode(&postChirpsBody)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, fmt.Sprintf("error parsing request: %v", err))
 		return
@@ -38,7 +48,7 @@ func (cfg *apiConfig) HandlerPostChirps(w http.ResponseWriter, r *http.Request) 
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		ID:        uuid.New(),
 		Body:      internal.CleanText(postChirpsBody.Body),
-		UserID:    postChirpsBody.UserId,
+		UserID:    userId,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	})

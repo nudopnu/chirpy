@@ -16,6 +16,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
+	Token     string    `json:"token"`
 }
 
 func (cfg *apiConfig) handlerPostUser(w http.ResponseWriter, r *http.Request) {
@@ -55,14 +56,22 @@ func (cfg *apiConfig) handlerPostUser(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *apiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 	loginRequestBody := struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email            string `json:"email"`
+		Password         string `json:"password"`
+		ExpiresInSeconds *int   `json:"expires_in_seconds"`
 	}{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&loginRequestBody)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "wrong credentials")
 		return
+	}
+	duration := time.Hour
+	if loginRequestBody.ExpiresInSeconds != nil {
+		duration = time.Duration(*loginRequestBody.ExpiresInSeconds)
+		if duration > time.Hour {
+			duration = time.Hour
+		}
 	}
 	user, err := cfg.db.GetUserByEmail(r.Context(), loginRequestBody.Email)
 	if err != nil {
@@ -73,10 +82,16 @@ func (cfg *apiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
 		return
 	}
+	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, duration)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed creating token")
+		return
+	}
 	respondWithJSON(w, http.StatusOK, User{
 		Id:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
+		Token:     token,
 	})
 }
