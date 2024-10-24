@@ -47,6 +47,7 @@ func main() {
 	serveMux.HandleFunc("GET /api/chirps", state.HandlerListChirps)
 	serveMux.HandleFunc("GET /api/chirps/{chirpID}", state.HandlerGetChirpById)
 	serveMux.HandleFunc("POST /api/chirps", state.HandlerPostChirps)
+	serveMux.HandleFunc("POST /api/login", state.HandlerLogin)
 	log.Printf("Serving file from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(server.ListenAndServe())
 }
