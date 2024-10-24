@@ -73,3 +73,19 @@ func (cfg *apiConfig) HandlerListChirps(w http.ResponseWriter, r *http.Request) 
 	}
 	respondWithJSON(w, http.StatusOK, chirps)
 }
+
+func (cfg *apiConfig) HandlerGetChirpById(w http.ResponseWriter, r *http.Request) {
+	chirpId := r.PathValue("chirpID")
+	chirp, err := cfg.db.GetChirpById(r.Context(), uuid.MustParse(chirpId))
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "chirp not found")
+		return
+	}
+	respondWithJSON(w, http.StatusOK, Chirp{
+		Id:        chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserId:    chirp.UserID,
+	})
+}
