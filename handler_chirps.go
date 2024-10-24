@@ -44,6 +44,7 @@ func (cfg *apiConfig) HandlerPostChirps(w http.ResponseWriter, r *http.Request) 
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error creating chirp: %v", err))
+		return
 	}
 	respondWithJSON(w, http.StatusCreated, Chirp{
 		Id:        chirp.ID,
@@ -52,4 +53,23 @@ func (cfg *apiConfig) HandlerPostChirps(w http.ResponseWriter, r *http.Request) 
 		Body:      chirp.Body,
 		UserId:    chirp.UserID,
 	})
+}
+
+func (cfg *apiConfig) HandlerListChirps(w http.ResponseWriter, r *http.Request) {
+	dbChirps, err := cfg.db.GetAllChirps(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error fetching chirps:%v", err))
+		return
+	}
+	chirps := make([]Chirp, 0, len(dbChirps))
+	for _, chirp := range dbChirps {
+		chirps = append(chirps, Chirp{
+			Id:        chirp.ID,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserId:    chirp.UserID,
+		})
+	}
+	respondWithJSON(w, http.StatusOK, chirps)
 }
