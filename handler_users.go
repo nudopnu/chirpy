@@ -12,11 +12,12 @@ import (
 )
 
 type User struct {
-	Id        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Token     string    `json:"token"`
+	Id           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Token        string    `json:"token"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 func (cfg *apiConfig) handlerPostUser(w http.ResponseWriter, r *http.Request) {
@@ -56,9 +57,8 @@ func (cfg *apiConfig) handlerPostUser(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *apiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 	loginRequestBody := struct {
-		Email            string `json:"email"`
-		Password         string `json:"password"`
-		ExpiresInSeconds *int   `json:"expires_in_seconds"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&loginRequestBody)
@@ -67,12 +67,6 @@ func (cfg *apiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	duration := time.Hour
-	if loginRequestBody.ExpiresInSeconds != nil {
-		duration = time.Duration(*loginRequestBody.ExpiresInSeconds)
-		if duration > time.Hour {
-			duration = time.Hour
-		}
-	}
 	user, err := cfg.db.GetUserByEmail(r.Context(), loginRequestBody.Email)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
@@ -87,11 +81,28 @@ func (cfg *apiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "failed creating token")
 		return
 	}
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed creating token")
+		return
+	}
+	_, err = cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token:     refreshToken,
+		UserID:    user.ID,
+		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed creating token")
+		return
+	}
 	respondWithJSON(w, http.StatusOK, User{
-		Id:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
-		Token:     token,
+		Id:           user.ID,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
+		Email:        user.Email,
+		Token:        token,
+		RefreshToken: refreshToken,
 	})
 }
