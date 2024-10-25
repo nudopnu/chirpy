@@ -50,6 +50,7 @@ func main() {
 	serveMux.HandleFunc("PUT /api/users", state.Authenticated(state.HandlerUpdateUser))
 	serveMux.HandleFunc("GET /api/chirps", state.HandlerListChirps)
 	serveMux.HandleFunc("GET /api/chirps/{chirpID}", state.HandlerGetChirpById)
+	serveMux.HandleFunc("DELETE /api/chirps/{chirpID}", state.Authenticated(state.HandlerDeleteChirp))
 	serveMux.HandleFunc("POST /api/chirps", state.HandlerPostChirps)
 	serveMux.HandleFunc("POST /api/login", state.HandlerLogin)
 	serveMux.HandleFunc("POST /api/refresh", state.HandlerRefresh)
