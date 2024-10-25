@@ -66,6 +66,17 @@ func (cfg *apiConfig) HandlerPostChirps(w http.ResponseWriter, r *http.Request) 
 }
 
 func (cfg *apiConfig) HandlerListChirps(w http.ResponseWriter, r *http.Request) {
+	authorId := r.URL.Query().Get("author_id")
+	userId, err := uuid.Parse(authorId)
+	if err == nil {
+		chirps, err := cfg.db.GetChirpsFromUser(r.Context(), userId)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "error getting chirps")
+			return
+		}
+		respondWithJSON(w, http.StatusOK, chirps)
+		return
+	}
 	dbChirps, err := cfg.db.GetAllChirps(r.Context())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error fetching chirps:%v", err))
