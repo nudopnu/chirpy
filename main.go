@@ -55,6 +55,7 @@ func main() {
 	serveMux.HandleFunc("POST /api/login", state.HandlerLogin)
 	serveMux.HandleFunc("POST /api/refresh", state.HandlerRefresh)
 	serveMux.HandleFunc("POST /api/revoke", state.HandlerRevoke)
+	serveMux.HandleFunc("POST /api/polka/webhooks", state.HandlerUpgradeUser)
 	log.Printf("Serving file from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(server.ListenAndServe())
 }
