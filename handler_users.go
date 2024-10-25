@@ -139,6 +139,11 @@ func (cfg *apiConfig) HandlerUpdateUser(user database.User, w http.ResponseWrite
 }
 
 func (cfg *apiConfig) HandlerUpgradeUser(w http.ResponseWriter, r *http.Request) {
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil || apiKey != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, "no api key provided")
+		return
+	}
 	requestBody := struct {
 		Event string `json:"event"`
 		Data  struct {
@@ -146,7 +151,7 @@ func (cfg *apiConfig) HandlerUpgradeUser(w http.ResponseWriter, r *http.Request)
 		} `json:"data"`
 	}{}
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&requestBody)
+	err = decoder.Decode(&requestBody)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "invalid request body")
 		return
