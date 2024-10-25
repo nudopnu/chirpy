@@ -106,3 +106,31 @@ func (cfg *apiConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 		RefreshToken: refreshToken,
 	})
 }
+
+func (cfg *apiConfig) HandlerUpdateUser(user database.User, w http.ResponseWriter, r *http.Request) {
+	requestBody := struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
+	}{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&requestBody)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, fmt.Sprintf("%v", err))
+		return
+	}
+	hashedPassword, err := auth.HashPassword(requestBody.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error generating hash")
+		return
+	}
+	_, err = cfg.db.UpdateUser(r.Context(), database.UpdateUserParams{
+		ID:             user.ID,
+		Email:          requestBody.Email,
+		HashedPassword: hashedPassword,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error saving user")
+		return
+	}
+	respondWithJSON(w, http.StatusOK, requestBody)
+}
