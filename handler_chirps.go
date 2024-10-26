@@ -67,21 +67,38 @@ func (cfg *apiConfig) HandlerPostChirps(w http.ResponseWriter, r *http.Request) 
 
 func (cfg *apiConfig) HandlerListChirps(w http.ResponseWriter, r *http.Request) {
 	authorId := r.URL.Query().Get("author_id")
-	userId, err := uuid.Parse(authorId)
-	if err == nil {
-		chirps, err := cfg.db.GetChirpsFromUser(r.Context(), userId)
+	sortOrder := r.URL.Query().Get("sort")
+	fmt.Println(authorId, sortOrder)
+	var dbChirps []database.Chirp
+	var err error
+	if authorId != "" {
+		userId, err := uuid.Parse(authorId)
 		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, "error getting chirps")
+			respondWithError(w, http.StatusBadRequest, "invalid user id")
 			return
 		}
-		respondWithJSON(w, http.StatusOK, chirps)
-		return
+		dbChirps, err = cfg.db.GetChirpsFiltered(r.Context(), database.GetChirpsFilteredParams{
+			Column1: userId,
+			Column2: sortOrder,
+		})
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error fetching chirps:%v", err))
+			return
+		}
+		fmt.Println(dbChirps)
+	} else {
+		dbChirps, err = cfg.db.GetChirpsFiltered(r.Context(), database.GetChirpsFilteredParams{
+			Column1: uuid.Nil,
+			Column2: sortOrder,
+		})
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error fetching chirps:%v", err))
+			return
+		}
+		fmt.Println("fuck")
+		fmt.Println(dbChirps)
 	}
-	dbChirps, err := cfg.db.GetAllChirps(r.Context())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error fetching chirps:%v", err))
-		return
-	}
+
 	chirps := make([]Chirp, 0, len(dbChirps))
 	for _, chirp := range dbChirps {
 		chirps = append(chirps, Chirp{

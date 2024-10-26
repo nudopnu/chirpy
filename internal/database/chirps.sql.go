@@ -111,13 +111,21 @@ func (q *Queries) GetChirpById(ctx context.Context, id uuid.UUID) (Chirp, error)
 	return i, err
 }
 
-const getChirpsFromUser = `-- name: GetChirpsFromUser :many
+const getChirpsFiltered = `-- name: GetChirpsFiltered :many
 SELECT id, body, user_id, created_at, updated_at FROM chirps
-WHERE user_id = $1
+WHERE ($1::UUID = '00000000-0000-0000-0000-000000000000'::UUID OR user_id = $1::UUID)
+ORDER BY
+    CASE WHEN $2::TEXT = 'asc' THEN created_at END ASC,
+    CASE WHEN $2::TEXT = 'desc' THEN created_at END DESC
 `
 
-func (q *Queries) GetChirpsFromUser(ctx context.Context, userID uuid.UUID) ([]Chirp, error) {
-	rows, err := q.db.QueryContext(ctx, getChirpsFromUser, userID)
+type GetChirpsFilteredParams struct {
+	Column1 uuid.UUID
+	Column2 string
+}
+
+func (q *Queries) GetChirpsFiltered(ctx context.Context, arg GetChirpsFilteredParams) ([]Chirp, error) {
+	rows, err := q.db.QueryContext(ctx, getChirpsFiltered, arg.Column1, arg.Column2)
 	if err != nil {
 		return nil, err
 	}

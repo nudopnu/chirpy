@@ -21,7 +21,7 @@ POST  http://localhost:8080/api/login
 ###
 
 POST http://localhost:8080/api/chirps
-Authorization: Bearer 3e135f4e89786df298f5891712c8da4fc5e995a3e41dd364d3706b3e90214140.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiIwNmRhNWU4MS1kOWFkLTQ0YTctYTYxNi0yYzE2MTk2NmU5NGIiLCJleHAiOjE3Mjk4NjI4ODgsImlhdCI6MTcyOTg1OTI4OH0.EIzck5kRcpvgUcQxi97kYubNl37Fi0DDa-7eR0ORuGI
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiIyM2NkMzk1Zi03YmY3LTQzNTYtYWQ4NS1kMjRhYzUwOTE2ZGYiLCJleHAiOjE3Mjk4ODI4MTgsImlhdCI6MTcyOTg3OTIxOH0.UR83Q_hxDJm3PBHu2itwvTiu36IjuPwc8oTQeQNHYSI
 
 {
   "body": "Let’s just say I know a guy... who knows a guy... who knows another guy."
@@ -40,3 +40,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiL
 
 POST http://localhost:8080/api/refresh
 Authorization: Bearer 3e135f4e89786df298f5891712c8da4fc5e995a3e41dd364d3706b3e90214140
+
+
+###
+
+GET http://localhost:8080/api/chirps?author_id=116e850e-c7ec-4bac-a525-0b869c9e41ce&sort=desc
+
