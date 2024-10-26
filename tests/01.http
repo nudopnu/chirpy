@@ -1,0 +1,33 @@
+### LOGIN REQUEST
+# @name login
+POST  http://localhost:8080/api/login
+
+{
+  "email": "saul@bettercall.com",
+  "password": "123456"
+}
+
+@userId = {{login.response.body.$.id}}
+@accessToken = {{login.response.body.$.token}}
+@refreshToken = {{login.response.body.$.refresh_token}}
+
+### POST A CHIRP
+POST http://localhost:8080/api/chirps
+Authorization: Bearer {{accessToken}}
+
+{
+  "body": "Let’s just say I know a guy... who knows a guy... who knows another guy."
+}
+
+### REFRESH ACCESS TOKEN
+# @name refresh
+POST http://localhost:8080/api/refresh
+Authorization: Bearer {{refreshToken}}
+
+@accessToken = {{refresh.response.body.$.token}}
+
+### LIST CHIRPS OF AUTHOR
+GET http://localhost:8080/api/chirps
+  ?author_id={{userId}}
+  &sort=asc
+
